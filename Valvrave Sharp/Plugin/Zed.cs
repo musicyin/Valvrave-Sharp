@@ -81,7 +81,7 @@
                 orbwalkMenu.Separator("Extra R Settings");
                 foreach (var enemy in GameObjects.EnemyHeroes)
                 {
-                    orbwalkMenu.Bool("RCast" + enemy.ChampionName, "Cast On " + enemy.ChampionName, false);
+                    orbwalkMenu.Bool("RCast" + enemy.ChampionName, "Not Cast On " + enemy.ChampionName, true);
                 }
             }
             var hybridMenu = MainMenu.Add(new Menu("Hybrid", "Hybrid"));
@@ -217,12 +217,16 @@
                             .ToList();
                     if (targets.Count > 0)
                     {
-                        target = TargetSelector.GetTarget(targets);
+                        target = Variables.TargetSelector.GetTarget(R.Range, R.DamageType, true, default(Vector3), targets);
                     }
-                    var selectTarget = TargetSelector.GetSelectedTarget(Q.Range + range);
-                    if (selectTarget != null && MainMenu["Orbwalk"]["RCast" + selectTarget.ChampionName])
+                    var selectTarget = Variables.TargetSelector.GetSelectedTarget();
+
+                    if (selectTarget.IsValidTarget(Q.Range + range))
                     {
-                        target = selectTarget;
+                        if (selectTarget != null && MainMenu["Orbwalk"]["RCast" + selectTarget.ChampionName])
+                        {
+                            target = selectTarget;
+                        }
                     }
                 }
                 if (RState > 0)
@@ -645,16 +649,16 @@
             KillSteal();
             switch (Orbwalker.ActiveMode)
             {
-                case OrbwalkerMode.Orbwalk:
-                    Orbwalk();
+                case OrbwalkingMode.Combo:
+                    Combo();
                     break;
-                case OrbwalkerMode.Hybrid:
+                case OrbwalkingMode.Hybrid:
                     Hybrid();
                     break;
-                case OrbwalkerMode.LastHit:
+                case OrbwalkingMode.LastHit:
                     Farm();
                     break;
-                case OrbwalkerMode.None:
+                case OrbwalkingMode.None:
                     if (MainMenu["FleeW"].GetValue<MenuKeyBind>().Active)
                     {
                         Orbwalker.MoveOrder(Game.CursorPos);
@@ -665,13 +669,13 @@
                     }
                     break;
             }
-            if (Orbwalker.ActiveMode != OrbwalkerMode.Orbwalk && Orbwalker.ActiveMode != OrbwalkerMode.Hybrid)
+            if (Orbwalker.ActiveMode != OrbwalkingMode.Combo && Orbwalker.ActiveMode != OrbwalkingMode.Hybrid)
             {
                 AutoQ();
             }
         }
 
-        private static void Orbwalk()
+        private static void Combo()
         {
             if (RState == 1 && Player.HealthPercent < MainMenu["Orbwalk"]["RSwapIfHpU"]
                 && Player.CountEnemy(Q.Range) > rShadow.CountEnemy(W.Range) && R.Cast())

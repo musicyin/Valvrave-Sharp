@@ -327,20 +327,20 @@
                 }
                 if (MainMenu["KillSteal"]["R"] && R.IsReady())
                 {
-                    var target =
-                        TargetSelector.GetTarget(
-                            GameObjects.EnemyHeroes.Where(
-                                i =>
-                                i.IsValidTarget(R.Range) && MainMenu["KillSteal"]["RCast" + i.ChampionName]
-                                && (i.Health + i.PhysicalShield <= Player.GetSpellDamage(i, SpellSlot.R)
-                                    || (MainMenu["KillSteal"]["Q"] && Q.IsReady() && !IsQOne && HaveQ(i)
-                                        && i.Health + i.PhysicalShield
-                                        <= GetQ2Dmg(i, Player.GetSpellDamage(i, SpellSlot.R))
-                                        + Player.GetAutoAttackDamage(i, true)))),
-                            R.DamageType);
-                    if (target != null)
+                    var target = Variables.TargetSelector.GetTarget(R.Range, R.DamageType);
+
+                    if(target.IsValidTarget(R.Range))
                     {
-                        R.CastOnUnit(target);
+                        if(MainMenu["KillSteal"]["RCast" + target.ChampionName])
+                        {
+                            if(target.Health + target.PhysicalShield <= Player.GetSpellDamage(target, SpellSlot.R) || (MainMenu["KillSteal"]["Q"] && Q.IsReady() && !IsQOne && HaveQ(target) && target.Health + target.PhysicalShield <= GetQ2Dmg(target, Player.GetSpellDamage(target, SpellSlot.R)) + Player.GetAutoAttackDamage(target, true)))
+                            {
+                                if (target != null)
+                                {
+                                    R.CastOnUnit(target);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -355,13 +355,13 @@
             KillSteal();
             switch (Orbwalker.ActiveMode)
             {
-                case OrbwalkerMode.Orbwalk:
-                    Orbwalk();
+                case OrbwalkingMode.Combo:
+                    Combo();
                     break;
-                case OrbwalkerMode.LastHit:
+                case OrbwalkingMode.LastHit:
                     Farm();
                     break;
-                case OrbwalkerMode.None:
+                case OrbwalkingMode.None:
                     if (MainMenu["FleeW"].GetValue<MenuKeyBind>().Active)
                     {
                         Orbwalker.MoveOrder(Game.CursorPos);
@@ -391,7 +391,7 @@
             }
         }
 
-        private static void Orbwalk()
+        private static void Combo()
         {
             if (MainMenu["Orbwalk"]["R"] && R.IsReady())
             {
@@ -505,7 +505,7 @@
             }
             if (MainMenu["Orbwalk"]["W"] && W.IsReady() && CanCastInOrbwalk
                 && Variables.TickCount - W.LastCastAttemptT >= 300 && !E.IsReady() && Passive == -1
-                && Orbwalker.GetTarget(OrbwalkerMode.Orbwalk) != null && W.Cast())
+                && Orbwalker.GetTarget(OrbwalkingMode.Combo) != null && W.Cast())
             {
                 return;
             }

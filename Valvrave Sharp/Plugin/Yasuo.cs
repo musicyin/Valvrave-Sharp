@@ -177,13 +177,11 @@
             }
         }
 
-        private static Obj_AI_Hero GetQCirTarget
-            => TargetSelector.GetTarget(QCirWidth, DamageType.Physical, null, Player.GetDashInfo().EndPos.ToVector3());
+        private static Obj_AI_Hero GetQCirTarget => Variables.TargetSelector.GetTarget(QCirWidth, DamageType.Physical, true, Player.GetDashInfo().EndPos.ToVector3(), null);
 
         private static float GetQDelay => 1 - Math.Min((Player.AttackSpeedMod - 1) * 0.006f, 0.66f);
 
-        private static List<Obj_AI_Hero> GetRTarget
-            => GameObjects.EnemyHeroes.Where(i => R.IsInRange(i) && CanCastR(i)).ToList();
+        private static List<Obj_AI_Hero> GetRTarget => GameObjects.EnemyHeroes.Where(i => R.IsInRange(i) && CanCastR(i)).ToList();
 
         private static bool HaveQ3 => Player.HasBuff("YasuoQ3W");
 
@@ -481,44 +479,50 @@
             }
             if (MainMenu["KillSteal"]["E"] && E.IsReady() && !IsDashing)
             {
-                var target =
-                    TargetSelector.GetTarget(
-                        GameObjects.EnemyHeroes.Where(i => CanCastE(i) && i.Health + i.MagicalShield <= GetEDmg(i)),
-                        E.DamageType);
-                if (target != null)
+                var target = Variables.TargetSelector.GetTarget(E.Range, E.DamageType);
+
+                if(CanCastE(target) && target.Health + target.MagicalShield <= GetEDmg(target))
                 {
-                    if (E.CastOnUnit(target))
+                    if (target != null)
                     {
-                        return;
+                        if (E.CastOnUnit(target))
+                        {
+                            return;
+                        }
                     }
-                }
-                else if (MainMenu["KillSteal"]["Q"] && Q.IsReady(20))
-                {
-                    target =
-                        TargetSelector.GetTarget(
-                            GameObjects.EnemyHeroes.Where(
-                                i =>
-                                CanCastE(i) && i.Distance(PosAfterE(i)) < QCirWidth
-                                && i.Health - GetEDmg(i) + i.PhysicalShield <= GetQDmg(i)),
-                            Q.DamageType);
-                    if (target != null && E.CastOnUnit(target))
+                    else if (MainMenu["KillSteal"]["Q"] && Q.IsReady(20))
                     {
-                        return;
+                        target = Variables.TargetSelector.GetTarget(Q.Range, Q.DamageType);
+
+                        if (CanCastE(target))
+                        {
+                            if(target.Distance(PosAfterE(target)) < QCirWidth)
+                            {
+                                if(target.Health - GetEDmg(target) + target.PhysicalShield <= GetQDmg(target))
+                                {
+                                    if (target != null && E.CastOnUnit(target))
+                                    {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
             if (MainMenu["KillSteal"]["R"] && R.IsReady())
             {
-                var target =
-                    TargetSelector.GetTarget(
-                        GetRTarget.Where(
-                            i =>
-                            MainMenu["KillSteal"]["RCast" + i.ChampionName]
-                            && i.Health + i.PhysicalShield <= Player.GetSpellDamage(i, SpellSlot.R)),
-                        R.DamageType);
-                if (target != null)
+                var target = Variables.TargetSelector.GetTarget(R.Range, R.DamageType);
+
+                if(target.Health + target.PhysicalShield <= Player.GetSpellDamage(target, SpellSlot.R))
                 {
-                    R.CastOnUnit(target);
+                    if(MainMenu["KillSteal"]["RCast" + target.ChampionName])
+                    {
+                        if (target != null)
+                        {
+                            R.CastOnUnit(target);
+                        }
+                    }
                 }
             }
         }
@@ -684,19 +688,19 @@
             KillSteal();
             switch (Orbwalker.ActiveMode)
             {
-                case OrbwalkerMode.Orbwalk:
-                    Orbwalk();
+                case OrbwalkingMode.Combo:
+                    Combo();
                     break;
-                case OrbwalkerMode.Hybrid:
+                case OrbwalkingMode.Hybrid:
                     Hybrid();
                     break;
-                case OrbwalkerMode.LaneClear:
+                case OrbwalkingMode.LaneClear:
                     LaneClear();
                     break;
-                case OrbwalkerMode.LastHit:
+                case OrbwalkingMode.LastHit:
                     Farm();
                     break;
-                case OrbwalkerMode.None:
+                case OrbwalkingMode.None:
                     if (MainMenu["Flee"]["E"].GetValue<MenuKeyBind>().Active)
                     {
                         Orbwalker.MoveOrder(Game.CursorPos);
@@ -704,7 +708,7 @@
                     }
                     break;
             }
-            if (Orbwalker.ActiveMode != OrbwalkerMode.Orbwalk && Orbwalker.ActiveMode != OrbwalkerMode.Hybrid)
+            if (Orbwalker.ActiveMode != OrbwalkingMode.Combo && Orbwalker.ActiveMode != OrbwalkingMode.Hybrid)
             {
                 AutoQ();
             }
@@ -714,7 +718,7 @@
             }
         }
 
-        private static void Orbwalk()
+        private static void Combo()
         {
             if (MainMenu["Orbwalk"]["R"] && R.IsReady() && GetRTarget.Count > 0)
             {

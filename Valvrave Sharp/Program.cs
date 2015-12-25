@@ -1,22 +1,20 @@
 ﻿namespace Valvrave_Sharp
 {
+    using LeagueSharp;
+    using LeagueSharp.SDK.Core;
+    using LeagueSharp.SDK.Core.Events;
+    using LeagueSharp.SDK.Core.Extensions;
+    using LeagueSharp.SDK.Core.UI.IMenu;
+    using LeagueSharp.SDK.Core.Utils;
+    using LeagueSharp.SDK.Core.Wrappers;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Reflection;
     using System.Text.RegularExpressions;
-
-    using LeagueSharp;
-    using LeagueSharp.SDK.Core.Events;
-    using LeagueSharp.SDK.Core.Extensions;
-    using LeagueSharp.SDK.Core.UI.IMenu;
-    using LeagueSharp.SDK.Core.Utils;
-    using LeagueSharp.SDK.Core.Wrappers;
-
     using Valvrave_Sharp.Core;
     using Valvrave_Sharp.Plugin;
-
     internal class Program
     {
         #region Constants
@@ -69,7 +67,7 @@
             MainMenu.Separator("Paypal: dcbrian01@gmail.com");
             Orbwalker.Init(MainMenu);
             Plugins[Player.ChampionName].Invoke();
-            LeagueSharp.SDK.Core.Orbwalker.Enabled = false;
+            Variables.Orbwalker.Enabled = false;
         }
 
         private static void InitSummonerSpell()
